@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cuestionario aplicado de Estática: fórmulas en R2 y R3</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --panel: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #38bdf8;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --warn: #f59e0b;
+      --border: rgba(255,255,255,.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #1e3a8a 0, transparent 32rem), var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .app {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+    }
+    .hero, .card {
+      background: rgba(17, 24, 39, .86);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+    }
+    .hero {
+      padding: 28px;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0 0 10px; font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.05; }
+    h2 { margin-top: 0; }
+    p { color: var(--muted); line-height: 1.65; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .mini {
+      background: rgba(31,41,55,.75);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .mini strong { display:block; font-size: 1.2rem; margin-bottom: 4px; }
+    .card { padding: 24px; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(31,41,55,.9);
+      color: var(--text);
+      font-weight: 650;
+    }
+    .timer {
+      font-variant-numeric: tabular-nums;
+      color: white;
+    }
+    .timer.warning { color: var(--warn); }
+    .timer.danger { color: var(--bad); }
+    .progress-wrap {
+      width: 100%;
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      overflow: hidden;
+      height: 10px;
+      margin: 14px 0 20px;
+    }
+    .progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      transition: width .25s ease;
+    }
+    .question {
+      font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+      line-height: 1.35;
+      margin: 10px 0 18px;
+      font-weight: 750;
+    }
+    .answers {
+      display: grid;
+      gap: 12px;
+    }
+    button.answer {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      background: rgba(31, 41, 55, .92);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 15px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+    button.answer:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: rgba(56,189,248,.7);
+      background: rgba(30, 64, 175, .35);
+    }
+    button.answer.correct {
+      border-color: rgba(34,197,94,.95);
+      background: rgba(34,197,94,.18);
+    }
+    button.answer.incorrect {
+      border-color: rgba(239,68,68,.95);
+      background: rgba(239,68,68,.18);
+    }
+    button.answer:disabled { cursor: not-allowed; opacity: .88; }
+    .feedback {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,.68);
+      display: none;
+    }
+    .feedback.show { display: block; }
+    .feedback.good { border-color: rgba(34,197,94,.65); }
+    .feedback.bad { border-color: rgba(239,68,68,.65); }
+    .actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .primary {
+      border: 0;
+      background: linear-gradient(135deg, var(--accent), #818cf8);
+      color: #07111f;
+      font-weight: 800;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+    .secondary {
+      border: 1px solid var(--border);
+      background: rgba(31,41,55,.9);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+    .hidden { display: none !important; }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .score {
+      font-size: 2.4rem;
+      color: white;
+      font-weight: 900;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 16px;
+      margin-top: 14px;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: white; background: rgba(255,255,255,.06); }
+    .bar {
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.09);
+      overflow: hidden;
+      min-width: 110px;
+    }
+    .bar > span {
+      display:block;
+      height:100%;
+      background: linear-gradient(90deg, var(--good), var(--accent));
+    }
+    .review {
+      margin-top: 16px;
+      max-height: 330px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+    }
+    .review-item {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(31,41,55,.4);
+    }
+    .review-item:last-child { border-bottom: 0; }
+    .tag {
+      display: inline-block;
+      font-size: .78rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(56,189,248,.15);
+      color: #bae6fd;
+      margin-right: 6px;
+      margin-bottom: 8px;
+    }
+
+    .formula-panel {
+      margin: 14px 0 18px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(56,189,248,.35);
+      background: rgba(14, 116, 144, .12);
+    }
+    .formula-panel h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: #e0f2fe;
+    }
+    .formula-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+    }
+    .formula {
+      background: rgba(15,23,42,.62);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--text);
+    }
+    .formula code {
+      display: block;
+      color: #bae6fd;
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+    .quiz-form {
+      display: grid;
+      gap: 12px;
+    }
+    label.answer {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      background: rgba(31, 41, 55, .92);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 15px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    label.answer:hover {
+      transform: translateY(-2px);
+      border-color: rgba(56,189,248,.7);
+      background: rgba(30, 64, 175, .35);
+    }
+    label.answer input {
+      margin-top: 3px;
+      transform: scale(1.15);
+      accent-color: var(--accent);
+    }
+    label.answer.correct {
+      border-color: rgba(34,197,94,.95);
+      background: rgba(34,197,94,.18);
+    }
+    label.answer.incorrect {
+      border-color: rgba(239,68,68,.95);
+      background: rgba(239,68,68,.18);
+    }
+    label.answer.disabled {
+      cursor: not-allowed;
+      opacity: .88;
+    }
+    label.answer.disabled:hover {
+      transform: none;
+      border-color: var(--border);
+    }
+
+    @media (max-width: 640px) {
+      .hero, .card { padding: 18px; border-radius: 18px; }
+      .topbar { align-items: stretch; }
+      .pill { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section id="startScreen" class="hero">
+      <h1>Cuestionario interactivo: Fundamentos de la Estática</h1>
+      <p>
+        Preparación enfocada en examen: ejercicios aplicativos de estática, fórmulas, equilibrio en R2 y R3, momentos, reacciones, fricción, cargas distribuidas y armaduras. Se han eliminado preguntas históricas y de dinámica.
+      </p>
+      <div class="grid">
+        <div class="mini"><strong>40 preguntas</strong><span>Aplicativas, con fórmulas y cálculos cortos</span></div>
+        <div class="mini"><strong>20 puntos</strong><span>Cada pregunta vale 0.5 puntos</span></div>
+        <div class="mini"><strong>50 segundos</strong><span>Cuenta regresiva por pregunta</span></div>
+        <div class="mini"><strong>R2 y R3</strong><span>Vectores, momentos y equilibrio aplicado</span></div>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="startQuiz()">Iniciar cuestionario</button>
+        <button class="secondary" onclick="toggleTheory()">Ver mapa teórico</button>
+      </div>
+      <div id="theoryBox" class="mini hidden" style="margin-top:16px">
+        <h2>Mapa teórico mínimo de repaso</h2>
+        <p>
+          Este repaso se centra netamente en estática: equilibrio de partículas y cuerpos rígidos.
+          Para R2 se usan ΣFx=0, ΣFy=0 y, en cuerpos rígidos, ΣM=0. Para R3 se agregan
+          ΣFz=0 y los tres momentos ΣMx=0, ΣMy=0, ΣMz=0. También se practican componentes,
+          producto cruz r×F, reacciones, fricción estática y resultantes de cargas distribuidas.
+        </p>
+        <div class="formula-panel">
+          <h3>Formulario estático para repasar antes de iniciar</h3>
+          <div class="formula-grid">
+            <div class="formula"><code>ΣF = 0</code><small>Equilibrio traslacional de una partícula.</small></div>
+            <div class="formula"><code>ΣFx = 0, ΣFy = 0, ΣM = 0</code><small>Equilibrio plano de un cuerpo rígido.</small></div>
+            <div class="formula"><code>F = m·a</code><small>Segunda ley de Newton.</small></div>
+            <div class="formula"><code>F = G·m₁·m₂ / r²</code><small>Ley de gravitación universal.</small></div>
+            <div class="formula"><code>W = m·g</code><small>Peso cerca de la superficie terrestre.</small></div>
+            <div class="formula"><code>g = G·mₑ / rₑ² ≈ 9.807 m/s²</code><small>Aceleración de la gravedad.</small></div>
+            <div class="formula"><code>Fᶜ = m·v² / r</code><small>Fuerza centrípeta.</small></div>
+            <div class="formula"><code>Fᶜ = 4π²·m·r / T²</code><small>Fuerza centrípeta usando el período.</small></div>
+            <div class="formula"><code>M = F·d⊥</code><small>Momento de una fuerza respecto a un punto.</small></div>
+            <div class="formula"><code>F = k·x</code><small>Ley de Hooke para resortes ideales.</small></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="quizScreen" class="card hidden">
+      <div class="topbar">
+        <span class="pill" id="counter">Pregunta 1/40</span>
+        <span class="pill" id="topic">Tema</span>
+        <span class="pill">⏱️ <span id="timer" class="timer">50</span>s</span>
+      </div>
+      <div class="progress-wrap"><div id="progress" class="progress"></div></div>
+      <div id="difficulty" class="tag"></div>
+      <div id="formulaBox" class="formula-panel hidden"></div>
+      <div id="question" class="question"></div>
+      <form id="answers" class="quiz-form" autocomplete="off"></form>
+      <div id="feedback" class="feedback"></div>
+    </section>
+
+    <section id="resultScreen" class="card hidden">
+      <h1>Resultados finales</h1>
+      <p>Tu calificación se calcula sobre 20 puntos. Cada respuesta correcta suma 0.5 puntos.</p>
+      <div class="results">
+        <div class="mini"><strong>Nota</strong><div class="score" id="scoreText">0/20</div></div>
+        <div class="mini"><strong>Correctas</strong><div class="score" id="correctText">0</div></div>
+        <div class="mini"><strong>Incorrectas / sin responder</strong><div class="score" id="wrongText">0</div></div>
+        <div class="mini"><strong>Rendimiento</strong><div class="score" id="percentText">0%</div></div>
+      </div>
+      <h2>Análisis por tema</h2>
+      <div id="topicStats"></div>
+      <h2>Áreas específicas a mejorar</h2>
+      <div id="recommendations"></div>
+      <div class="actions">
+        <button class="primary" onclick="restartQuiz()">Reiniciar cuestionario</button>
+        <button class="secondary" onclick="toggleReview()">Ver revisión de errores</button>
+      </div>
+      <div id="reviewBox" class="review hidden"></div>
+    </section>
+  </main>
+
+  <script>
+
+    const formulaByTopic = {
+      "Vectores en R2": [
+            [
+                  "Fx = F cosθ",
+                  "Componente horizontal."
+            ],
+            [
+                  "Fy = F senθ",
+                  "Componente vertical."
+            ],
+            [
+                  "F = √(Fx² + Fy²)",
+                  "Magnitud en R2."
+            ]
+      ],
+      "Vectores en R3": [
+            [
+                  "F = Fxi + Fyj + Fzk",
+                  "Forma cartesiana."
+            ],
+            [
+                  "|F| = √(Fx² + Fy² + Fz²)",
+                  "Magnitud en R3."
+            ],
+            [
+                  "F = |F|u",
+                  "Fuerza desde vector unitario."
+            ]
+      ],
+      "Equilibrio de partícula en R2": [
+            [
+                  "ΣFx = 0",
+                  "Equilibrio horizontal."
+            ],
+            [
+                  "ΣFy = 0",
+                  "Equilibrio vertical."
+            ]
+      ],
+      "Plano inclinado estático": [
+            [
+                  "W∥ = W senθ",
+                  "Componente paralela al plano."
+            ],
+            [
+                  "W⊥ = W cosθ",
+                  "Componente perpendicular al plano."
+            ],
+            [
+                  "N = W cosθ",
+                  "Para plano liso sin otras fuerzas normales."
+            ]
+      ],
+      "Momento en R2": [
+            [
+                  "M = F d⊥",
+                  "Momento con brazo perpendicular."
+            ],
+            [
+                  "M = rF senθ",
+                  "Momento usando ángulo entre r y F."
+            ]
+      ],
+      "Momento en R3": [
+            [
+                  "M = r × F",
+                  "Momento vectorial."
+            ],
+            [
+                  "i×j=k, j×k=i, k×i=j",
+                  "Regla de producto cruz."
+            ],
+            [
+                  "j×i=-k",
+                  "Cambio de orden cambia signo."
+            ]
+      ],
+      "Par de fuerzas": [
+            [
+                  "M_par = Fd",
+                  "Momento de un par."
+            ],
+            [
+                  "ΣF = 0, ΣM ≠ 0",
+                  "Un par puro no tiene fuerza resultante."
+            ]
+      ],
+      "Equilibrio de cuerpo rígido en R2": [
+            [
+                  "ΣFx = 0",
+                  "Equilibrio horizontal."
+            ],
+            [
+                  "ΣFy = 0",
+                  "Equilibrio vertical."
+            ],
+            [
+                  "ΣMO = 0",
+                  "Equilibrio rotacional."
+            ]
+      ],
+      "Reacciones en apoyos R2": [
+            [
+                  "ΣMO = 0",
+                  "Sirve para despejar una reacción."
+            ],
+            [
+                  "RA + RB = cargas verticales",
+                  "Equilibrio vertical típico."
+            ],
+            [
+                  "R = wL",
+                  "Carga uniforme equivalente."
+            ]
+      ],
+      "Armaduras R2": [
+            [
+                  "ΣFx = 0, ΣFy = 0",
+                  "Método de nudos."
+            ],
+            [
+                  "F negativa asumida en tracción ⇒ compresión",
+                  "Interpretación del signo."
+            ]
+      ],
+      "Fricción estática": [
+            [
+                  "f_s ≤ μsN",
+                  "Fricción estática disponible."
+            ],
+            [
+                  "f_s,max = μsN",
+                  "Fricción máxima antes del deslizamiento."
+            ]
+      ],
+      "Centroides y resultantes": [
+            [
+                  "R = área bajo la carga",
+                  "Resultante de carga distribuida."
+            ],
+            [
+                  "Triangular: R = 1/2 b h",
+                  "Carga triangular equivalente."
+            ],
+            [
+                  "x = 2b/3 desde intensidad cero",
+                  "Centroide de triángulo de carga."
+            ]
+      ],
+      "Equilibrio de cuerpo rígido en R3": [
+            [
+                  "ΣFx=ΣFy=ΣFz=0",
+                  "Equilibrio de fuerzas en R3."
+            ],
+            [
+                  "ΣMx=ΣMy=ΣMz=0",
+                  "Equilibrio de momentos en R3."
+            ],
+            [
+                  "M = r × F",
+                  "Momento en tres dimensiones."
+            ]
+      ],
+      "Formulario estático": [
+            [
+                  "ΣF = 0, ΣM = 0",
+                  "Condición central de estática."
+            ],
+            [
+                  "ΣF = m a",
+                  "Dinámica; no se usa si el cuerpo está en reposo."
+            ]
+      ]
+};
+
+    const questions = [
+      {
+            "tema": "Vectores en R2",
+            "dif": "Básica aplicada",
+            "q": "Una fuerza de 100 N forma 30° con el eje +x. ¿Cuáles son sus componentes rectangulares?",
+            "opts": [
+                  "Fx = 86.6 N, Fy = 50.0 N",
+                  "Fx = 50.0 N, Fy = 86.6 N",
+                  "Fx = 100 N, Fy = 30 N",
+                  "Fx = 70.0 N, Fy = 70.0 N"
+            ],
+            "ans": 0,
+            "exp": "En R2: Fx = F cosθ = 100 cos30° = 86.6 N; Fy = F senθ = 100 sen30° = 50.0 N."
+      },
+      {
+            "tema": "Vectores en R2",
+            "dif": "Básica aplicada",
+            "q": "Una fuerza tiene componentes Fx = 30 N y Fy = 40 N. ¿Cuál es su magnitud?",
+            "opts": [
+                  "50 N",
+                  "70 N",
+                  "10 N",
+                  "1200 N"
+            ],
+            "ans": 0,
+            "exp": "La magnitud es F = √(Fx² + Fy²) = √(30² + 40²) = 50 N."
+      },
+      {
+            "tema": "Vectores en R2",
+            "dif": "Básica aplicada",
+            "q": "Si una fuerza de 200 N apunta hacia la izquierda, su componente en x es:",
+            "opts": [
+                  "+200 N",
+                  "-200 N",
+                  "0 N",
+                  "+100 N"
+            ],
+            "ans": 1,
+            "exp": "Tomando +x hacia la derecha, una fuerza hacia la izquierda tiene componente negativa: Fx = -200 N."
+      },
+      {
+            "tema": "Vectores en R3",
+            "dif": "Básica aplicada",
+            "q": "Un vector fuerza en R3 es F = 3i + 4j + 12k N. ¿Cuál es su magnitud?",
+            "opts": [
+                  "13 N",
+                  "19 N",
+                  "7 N",
+                  "25 N"
+            ],
+            "ans": 0,
+            "exp": "|F| = √(3² + 4² + 12²) = √169 = 13 N."
+      },
+      {
+            "tema": "Vectores en R3",
+            "dif": "Básica aplicada",
+            "q": "Una fuerza de 100 N tiene vector unitario u = 0.6i + 0.8j + 0k. ¿Cuál es la fuerza vectorial?",
+            "opts": [
+                  "F = 60i + 80j + 0k N",
+                  "F = 6i + 8j + 0k N",
+                  "F = 100i + 100j + 0k N",
+                  "F = 0.6i + 0.8j + 0k N"
+            ],
+            "ans": 0,
+            "exp": "Se multiplica la magnitud por el unitario: F = 100u = 60i + 80j + 0k N."
+      },
+      {
+            "tema": "Vectores en R3",
+            "dif": "Intermedia aplicada",
+            "q": "¿Cuál de estos vectores es unitario?",
+            "opts": [
+                  "0.6i + 0.8j",
+                  "2i + 3j",
+                  "i + j + k",
+                  "0.5i + 0.5j + 0.5k"
+            ],
+            "ans": 0,
+            "exp": "Un vector unitario tiene magnitud 1. √(0.6² + 0.8²) = √1 = 1."
+      },
+      {
+            "tema": "Equilibrio de partícula en R2",
+            "dif": "Básica aplicada",
+            "q": "Sobre una partícula actúan F1 = 80 N hacia +x y F2 = 50 N hacia -x. ¿Qué fuerza adicional en x se necesita para equilibrio?",
+            "opts": [
+                  "30 N hacia -x",
+                  "30 N hacia +x",
+                  "130 N hacia -x",
+                  "0 N"
+            ],
+            "ans": 0,
+            "exp": "La resultante actual es +80 - 50 = +30 N. Para equilibrio se requiere una fuerza de -30 N."
+      },
+      {
+            "tema": "Equilibrio de partícula en R2",
+            "dif": "Intermedia aplicada",
+            "q": "Dos cables sostienen una carga de 100 N de forma simétrica, cada cable formando 30° con la vertical. ¿Cuál es la tensión en cada cable?",
+            "opts": [
+                  "57.7 N",
+                  "50.0 N",
+                  "100 N",
+                  "86.6 N"
+            ],
+            "ans": 0,
+            "exp": "Por simetría: 2T cos30° = 100; entonces T = 100/(2cos30°) = 57.7 N."
+      },
+      {
+            "tema": "Equilibrio de partícula en R2",
+            "dif": "Intermedia aplicada",
+            "q": "Un nudo está sometido a una carga vertical de 300 N hacia abajo y a dos tensiones simétricas que forman 45° con la horizontal. ¿Qué ecuación vertical es correcta?",
+            "opts": [
+                  "2T sen45° - 300 = 0",
+                  "2T cos45° - 300 = 0",
+                  "T sen45° + 300 = 0",
+                  "2T - 300 sen45° = 0"
+            ],
+            "ans": 0,
+            "exp": "Si el ángulo se mide con la horizontal, la componente vertical de cada tensión es T sen45°. En equilibrio: 2T sen45° = 300."
+      },
+      {
+            "tema": "Plano inclinado estático",
+            "dif": "Básica aplicada",
+            "q": "Un bloque de peso W está sobre un plano inclinado liso de ángulo θ. ¿Cuál es la componente del peso paralela al plano?",
+            "opts": [
+                  "W senθ",
+                  "W cosθ",
+                  "W tanθ",
+                  "W/ senθ"
+            ],
+            "ans": 0,
+            "exp": "En un plano inclinado, el peso se descompone en W∥ = W senθ y W⊥ = W cosθ."
+      },
+      {
+            "tema": "Plano inclinado estático",
+            "dif": "Intermedia aplicada",
+            "q": "Un bloque de 100 N está sobre un plano liso de 30°. ¿Qué fuerza paralela al plano se necesita para mantenerlo en reposo?",
+            "opts": [
+                  "50 N hacia arriba del plano",
+                  "86.6 N hacia arriba del plano",
+                  "100 N hacia arriba del plano",
+                  "25 N hacia abajo del plano"
+            ],
+            "ans": 0,
+            "exp": "La componente que baja por el plano es W sen30° = 100(0.5) = 50 N. Para equilibrio se aplica 50 N hacia arriba del plano."
+      },
+      {
+            "tema": "Plano inclinado estático",
+            "dif": "Intermedia aplicada",
+            "q": "Un bloque de 200 N está en un plano liso de 60°. ¿Cuál es la normal?",
+            "opts": [
+                  "100 N",
+                  "173.2 N",
+                  "200 N",
+                  "346.4 N"
+            ],
+            "ans": 0,
+            "exp": "En plano liso, N = W cosθ = 200 cos60° = 100 N."
+      },
+      {
+            "tema": "Momento en R2",
+            "dif": "Básica aplicada",
+            "q": "Una fuerza de 50 N actúa perpendicularmente a una barra a 2 m del punto O. ¿Cuál es el momento respecto a O?",
+            "opts": [
+                  "100 N·m",
+                  "25 N·m",
+                  "52 N·m",
+                  "0 N·m"
+            ],
+            "ans": 0,
+            "exp": "M = F d⊥ = 50(2) = 100 N·m."
+      },
+      {
+            "tema": "Momento en R2",
+            "dif": "Básica aplicada",
+            "q": "Si la línea de acción de una fuerza pasa por el punto O, su momento respecto a O es:",
+            "opts": [
+                  "0",
+                  "F·d",
+                  "Máximo",
+                  "F/r"
+            ],
+            "ans": 0,
+            "exp": "El brazo perpendicular es cero; por tanto M_O = F·0 = 0."
+      },
+      {
+            "tema": "Momento en R2",
+            "dif": "Intermedia aplicada",
+            "q": "Una fuerza vertical de 80 N actúa hacia abajo en x = 3 m respecto a O. Tomando antihorario positivo, ¿cuál es el momento?",
+            "opts": [
+                  "-240 N·m",
+                  "+240 N·m",
+                  "-26.7 N·m",
+                  "+26.7 N·m"
+            ],
+            "ans": 0,
+            "exp": "Una fuerza hacia abajo aplicada a la derecha de O hace girar en sentido horario. Si antihorario es positivo: M = -80(3) = -240 N·m."
+      },
+      {
+            "tema": "Momento en R2",
+            "dif": "Intermedia aplicada",
+            "q": "Una fuerza de 100 N forma 30° con una barra horizontal de 4 m. ¿Qué momento produce respecto al extremo de la barra?",
+            "opts": [
+                  "200 N·m",
+                  "400 N·m",
+                  "346.4 N·m",
+                  "100 N·m"
+            ],
+            "ans": 0,
+            "exp": "Solo la componente perpendicular a la barra produce momento: F⊥ = 100 sen30° = 50 N. Entonces M = 4(50) = 200 N·m."
+      },
+      {
+            "tema": "Momento en R3",
+            "dif": "Intermedia aplicada",
+            "q": "En R3, si r = 2i m y F = 30j N, ¿cuál es M = r × F?",
+            "opts": [
+                  "60k N·m",
+                  "-60k N·m",
+                  "60i N·m",
+                  "60j N·m"
+            ],
+            "ans": 0,
+            "exp": "i × j = k, entonces M = (2i) × (30j) = 60k N·m."
+      },
+      {
+            "tema": "Momento en R3",
+            "dif": "Intermedia aplicada",
+            "q": "En R3, si r = 3j m y F = 20i N, ¿cuál es r × F?",
+            "opts": [
+                  "-60k N·m",
+                  "+60k N·m",
+                  "60j N·m",
+                  "0"
+            ],
+            "ans": 0,
+            "exp": "j × i = -k, por eso M = (3j) × (20i) = -60k N·m."
+      },
+      {
+            "tema": "Momento en R3",
+            "dif": "Avanzada aplicada",
+            "q": "Si r = 2i + 1j m y F = 10j N, ¿cuál es el momento respecto al origen?",
+            "opts": [
+                  "20k N·m",
+                  "10k N·m",
+                  "-20k N·m",
+                  "0"
+            ],
+            "ans": 0,
+            "exp": "r × F = (2i + 1j) × (10j) = 20k + 0 = 20k N·m."
+      },
+      {
+            "tema": "Par de fuerzas",
+            "dif": "Intermedia aplicada",
+            "q": "Dos fuerzas paralelas, iguales y opuestas de 40 N están separadas 0.5 m. ¿Cuál es el momento del par?",
+            "opts": [
+                  "20 N·m",
+                  "80 N·m",
+                  "40 N·m",
+                  "0 N·m"
+            ],
+            "ans": 0,
+            "exp": "El momento de un par es M = F d = 40(0.5) = 20 N·m. Es un momento libre."
+      },
+      {
+            "tema": "Par de fuerzas",
+            "dif": "Intermedia aplicada",
+            "q": "Un par de fuerzas produce un momento de 120 N·m. Si las fuerzas son de 60 N, ¿cuál es la distancia perpendicular entre ellas?",
+            "opts": [
+                  "2 m",
+                  "0.5 m",
+                  "60 m",
+                  "7200 m"
+            ],
+            "ans": 0,
+            "exp": "Para un par: M = F d. Entonces d = M/F = 120/60 = 2 m."
+      },
+      {
+            "tema": "Equilibrio de cuerpo rígido en R2",
+            "dif": "Básica aplicada",
+            "q": "Para un cuerpo rígido plano en equilibrio, ¿qué ecuaciones independientes se usan normalmente?",
+            "opts": [
+                  "ΣFx = 0, ΣFy = 0, ΣMO = 0",
+                  "Solo ΣFx = 0",
+                  "F = m·a y v = at",
+                  "Solo W = mg"
+            ],
+            "ans": 0,
+            "exp": "En estática plana se anulan dos componentes de fuerza y un momento: ΣFx = 0, ΣFy = 0, ΣM = 0."
+      },
+      {
+            "tema": "Reacciones en apoyos R2",
+            "dif": "Intermedia aplicada",
+            "q": "Una viga simplemente apoyada tiene una carga puntual de 100 N en el centro. ¿Cuáles son las reacciones verticales?",
+            "opts": [
+                  "RA = 50 N, RB = 50 N",
+                  "RA = 100 N, RB = 0",
+                  "RA = 0, RB = 100 N",
+                  "RA = 25 N, RB = 75 N"
+            ],
+            "ans": 0,
+            "exp": "Por simetría y equilibrio vertical, RA + RB = 100 N y RA = RB = 50 N."
+      },
+      {
+            "tema": "Reacciones en apoyos R2",
+            "dif": "Intermedia aplicada",
+            "q": "Una viga de 4 m tiene una carga de 100 N a 1 m del apoyo A y 3 m del apoyo B. ¿Cuál es RB?",
+            "opts": [
+                  "25 N",
+                  "75 N",
+                  "100 N",
+                  "50 N"
+            ],
+            "ans": 0,
+            "exp": "Tomando momentos en A: RB(4) - 100(1) = 0; RB = 25 N."
+      },
+      {
+            "tema": "Reacciones en apoyos R2",
+            "dif": "Intermedia aplicada",
+            "q": "En el problema anterior, ¿cuál es RA?",
+            "opts": [
+                  "75 N",
+                  "25 N",
+                  "100 N",
+                  "0 N"
+            ],
+            "ans": 0,
+            "exp": "Equilibrio vertical: RA + RB = 100. Como RB = 25 N, entonces RA = 75 N."
+      },
+      {
+            "tema": "Reacciones en apoyos R2",
+            "dif": "Intermedia aplicada",
+            "q": "Una viga de 6 m soporta una carga puntual de 300 N a 2 m de A. ¿Cuál es la reacción en B?",
+            "opts": [
+                  "100 N",
+                  "200 N",
+                  "300 N",
+                  "50 N"
+            ],
+            "ans": 0,
+            "exp": "Momento en A: RB(6) = 300(2), entonces RB = 100 N."
+      },
+      {
+            "tema": "Reacciones en apoyos R2",
+            "dif": "Avanzada aplicada",
+            "q": "Una viga de 6 m tiene una carga distribuida uniforme de 20 N/m en toda su longitud. ¿Cuál es la carga equivalente total?",
+            "opts": [
+                  "120 N ubicada en el centro",
+                  "20 N ubicada en el centro",
+                  "60 N ubicada en A",
+                  "6 N ubicada en B"
+            ],
+            "ans": 0,
+            "exp": "La resultante de una carga uniforme es wL = 20(6) = 120 N y actúa en el centro del tramo."
+      },
+      {
+            "tema": "Reacciones en apoyos R2",
+            "dif": "Avanzada aplicada",
+            "q": "Para la viga anterior de 6 m con carga uniforme de 20 N/m en todo el tramo, ¿cuáles son las reacciones verticales?",
+            "opts": [
+                  "RA = 60 N, RB = 60 N",
+                  "RA = 120 N, RB = 0",
+                  "RA = 20 N, RB = 100 N",
+                  "RA = 0, RB = 120 N"
+            ],
+            "ans": 0,
+            "exp": "La carga equivalente es 120 N en el centro. Por simetría, RA = RB = 60 N."
+      },
+      {
+            "tema": "Armaduras R2",
+            "dif": "Intermedia aplicada",
+            "q": "En el método de nudos para una armadura plana, si un nudo está en equilibrio, ¿qué ecuaciones se aplican?",
+            "opts": [
+                  "ΣFx = 0 y ΣFy = 0",
+                  "ΣM = Iα",
+                  "F = m·a",
+                  "W = mg únicamente"
+            ],
+            "ans": 0,
+            "exp": "Cada nudo de una armadura se idealiza como partícula, por lo que se aplican ΣFx = 0 y ΣFy = 0."
+      },
+      {
+            "tema": "Armaduras R2",
+            "dif": "Intermedia aplicada",
+            "q": "En una armadura, si al resolver una barra obtienes fuerza negativa suponiendo tracción, significa que la barra está en:",
+            "opts": [
+                  "Compresión",
+                  "Tracción mayor",
+                  "Equilibrio imposible",
+                  "Momento puro"
+            ],
+            "ans": 0,
+            "exp": "Si asumiste tracción y el resultado sale negativo, el sentido real es opuesto: la barra está en compresión."
+      },
+      {
+            "tema": "Armaduras R2",
+            "dif": "Avanzada aplicada",
+            "q": "En un nudo de armadura actúan una carga de 100 N hacia abajo y una barra vertical. Si no hay otras componentes verticales, la fuerza en esa barra debe ser:",
+            "opts": [
+                  "100 N hacia arriba sobre el nudo",
+                  "100 N hacia abajo sobre el nudo",
+                  "0 N",
+                  "50 N horizontal"
+            ],
+            "ans": 0,
+            "exp": "Para ΣFy = 0, la barra vertical debe equilibrar los 100 N hacia abajo con 100 N hacia arriba sobre el nudo."
+      },
+      {
+            "tema": "Fricción estática",
+            "dif": "Intermedia aplicada",
+            "q": "Un bloque de 100 N está sobre una superficie horizontal con μs = 0.30. ¿Cuál es la fricción estática máxima?",
+            "opts": [
+                  "30 N",
+                  "100 N",
+                  "300 N",
+                  "3 N"
+            ],
+            "ans": 0,
+            "exp": "La fricción estática máxima es f_s,max = μs N = 0.30(100) = 30 N."
+      },
+      {
+            "tema": "Fricción estática",
+            "dif": "Intermedia aplicada",
+            "q": "Si un bloque de 100 N en superficie horizontal recibe una fuerza horizontal de 20 N y μs = 0.30, ¿se mueve?",
+            "opts": [
+                  "No, porque la fricción máxima es 30 N",
+                  "Sí, porque 20 N siempre mueve el bloque",
+                  "Sí, porque la normal es cero",
+                  "No, porque no existe fricción"
+            ],
+            "ans": 0,
+            "exp": "La fricción estática puede ajustarse hasta 30 N. Como se requieren solo 20 N para equilibrar, el bloque no se mueve."
+      },
+      {
+            "tema": "Fricción estática",
+            "dif": "Avanzada aplicada",
+            "q": "Un bloque de 200 N está en un plano inclinado de 30° con μs = 0.40. ¿Cuál es la fricción máxima?",
+            "opts": [
+                  "69.3 N",
+                  "80 N",
+                  "100 N",
+                  "173.2 N"
+            ],
+            "ans": 0,
+            "exp": "N = W cos30° = 173.2 N. Entonces f_s,max = μs N = 0.40(173.2) = 69.3 N."
+      },
+      {
+            "tema": "Centroides y resultantes",
+            "dif": "Intermedia aplicada",
+            "q": "Una carga triangular varía de 0 a 60 N/m sobre 3 m. ¿Cuál es la resultante?",
+            "opts": [
+                  "90 N",
+                  "180 N",
+                  "60 N",
+                  "30 N"
+            ],
+            "ans": 0,
+            "exp": "La resultante es el área del triángulo: R = (1/2)(base)(altura) = 0.5(3)(60) = 90 N."
+      },
+      {
+            "tema": "Centroides y resultantes",
+            "dif": "Avanzada aplicada",
+            "q": "Para una carga triangular que va de 0 a 60 N/m en 3 m, medida desde el extremo de intensidad cero, ¿dónde actúa la resultante?",
+            "opts": [
+                  "A 2 m del extremo de intensidad cero",
+                  "A 1 m del extremo de intensidad cero",
+                  "En el centro, a 1.5 m",
+                  "En el extremo de intensidad máxima"
+            ],
+            "ans": 0,
+            "exp": "La resultante de una carga triangular actúa a 2/3 de la base desde el extremo de intensidad cero: x = 2 m."
+      },
+      {
+            "tema": "Equilibrio de cuerpo rígido en R3",
+            "dif": "Avanzada aplicada",
+            "q": "Para un cuerpo rígido en equilibrio en R3, ¿cuántas ecuaciones escalares de equilibrio se tienen?",
+            "opts": [
+                  "6",
+                  "3",
+                  "2",
+                  "9"
+            ],
+            "ans": 0,
+            "exp": "En R3 se usan tres ecuaciones de fuerza y tres de momento: ΣFx=0, ΣFy=0, ΣFz=0, ΣMx=0, ΣMy=0, ΣMz=0."
+      },
+      {
+            "tema": "Equilibrio de cuerpo rígido en R3",
+            "dif": "Avanzada aplicada",
+            "q": "Si una fuerza F = 10i + 0j + 0k N actúa en r = 0i + 2j + 0k m, ¿cuál es el momento r × F?",
+            "opts": [
+                  "-20k N·m",
+                  "+20k N·m",
+                  "20i N·m",
+                  "0"
+            ],
+            "ans": 0,
+            "exp": "r × F = (2j) × (10i) = 20(j×i) = -20k N·m."
+      },
+      {
+            "tema": "Equilibrio de cuerpo rígido en R3",
+            "dif": "Avanzada aplicada",
+            "q": "En R3, una reacción tipo rótula esférica ideal puede ejercer generalmente:",
+            "opts": [
+                  "Tres componentes de fuerza y ningún momento de reacción",
+                  "Solo una fuerza vertical",
+                  "Tres momentos y ninguna fuerza",
+                  "Solo una componente horizontal"
+            ],
+            "ans": 0,
+            "exp": "Una rótula esférica impide traslación en x, y, z; por eso puede desarrollar tres fuerzas, pero permite rotación, así que no transmite momentos ideales."
+      },
+      {
+            "tema": "Formulario estático",
+            "dif": "Síntesis aplicada",
+            "q": "¿Cuál de las siguientes fórmulas NO corresponde a estática, sino a dinámica?",
+            "opts": [
+                  "ΣF = m·a",
+                  "ΣFx = 0",
+                  "M = F·d⊥",
+                  "f_s,max = μsN"
+            ],
+            "ans": 0,
+            "exp": "ΣF = m·a es dinámica cuando hay aceleración. En estática se usa el caso particular ΣF = 0."
+      }
+];
+    const POINTS_PER_QUESTION = 0.5;
+    const MAX_TIME = 50;
+
+    let current = 0;
+    let correct = 0;
+    let timer = MAX_TIME;
+    let intervalId = null;
+    let locked = false;
+    let history = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function toggleTheory() {
+      $("theoryBox").classList.toggle("hidden");
+    }
+
+    function startQuiz() {
+      $("startScreen").classList.add("hidden");
+      $("resultScreen").classList.add("hidden");
+      $("quizScreen").classList.remove("hidden");
+      current = 0;
+      correct = 0;
+      history = [];
+      showQuestion();
+    }
+
+    function restartQuiz() {
+      clearInterval(intervalId);
+      startQuiz();
+    }
+
+    function showQuestion() {
+      locked = false;
+      timer = MAX_TIME;
+      const q = questions[current];
+
+      $("counter").textContent = `Pregunta ${current + 1}/40`;
+      $("topic").textContent = q.tema;
+      $("difficulty").textContent = q.dif;
+      $("question").textContent = q.q;
+      $("progress").style.width = `${(current / questions.length) * 100}%`;
+      $("feedback").className = "feedback";
+      $("feedback").innerHTML = "";
+
+      // No mostramos el formulario antes de responder para que practiques memoria activa.
+      // La explicación inmediata después de responder sí refuerza la fórmula correcta.
+      $("formulaBox").classList.add("hidden");
+      $("formulaBox").innerHTML = "";
+
+      const answers = $("answers");
+      answers.innerHTML = "";
+      q.opts.forEach((opt, idx) => {
+        const label = document.createElement("label");
+        label.className = "answer";
+        label.setAttribute("for", `q${current}_opt${idx}`);
+
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = `pregunta_${current + 1}`;
+        input.id = `q${current}_opt${idx}`;
+        input.value = idx;
+        input.onchange = () => selectAnswer(idx);
+
+        const span = document.createElement("span");
+        span.innerHTML = `<strong>${String.fromCharCode(65 + idx)}.</strong> ${opt}`;
+
+        label.appendChild(input);
+        label.appendChild(span);
+        answers.appendChild(label);
+      });
+
+      updateTimer();
+      clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        timer--;
+        updateTimer();
+        if (timer <= 0) {
+          handleTimeout();
+        }
+      }, 1000);
+    }
+
+
+    function renderFormulaBox(topic) {
+      const box = $("formulaBox");
+      const formulas = formulaByTopic[topic] || [];
+      if (!formulas.length) {
+        box.classList.add("hidden");
+        box.innerHTML = "";
+        return;
+      }
+      box.classList.remove("hidden");
+      box.innerHTML = `<h3>Formulario útil para esta pregunta</h3><div class="formula-grid">` +
+        formulas.map(([f, note]) => `<div class="formula"><code>${f}</code><small>${note}</small></div>`).join("") +
+        `</div>`;
+    }
+
+    function updateTimer() {
+      const t = $("timer");
+      t.textContent = timer;
+      t.classList.remove("warning", "danger");
+      if (timer <= 10) t.classList.add("danger");
+      else if (timer <= 20) t.classList.add("warning");
+    }
+
+    function handleTimeout() {
+      if (locked) return;
+      locked = true;
+      clearInterval(intervalId);
+      const q = questions[current];
+      const buttons = document.querySelectorAll("label.answer");
+      const inputs = document.querySelectorAll("#answers input");
+      inputs.forEach(input => input.disabled = true);
+      buttons.forEach((b, idx) => {
+        b.classList.add("disabled");
+        if (idx === q.ans) b.classList.add("correct");
+      });
+      history.push({
+        pregunta: q.q,
+        tema: q.tema,
+        dificultad: q.dif,
+        correcta: false,
+        sinResponder: true,
+        elegida: "Sin responder",
+        respuestaCorrecta: q.opts[q.ans],
+        explicacion: q.exp
+      });
+      showFeedback(false, `Tiempo agotado. La respuesta correcta era: <strong>${q.opts[q.ans]}</strong>.`, q.exp);
+      setTimeout(nextQuestion, 3300);
+    }
+
+    function selectAnswer(selected) {
+      if (locked) return;
+      locked = true;
+      clearInterval(intervalId);
+
+      const q = questions[current];
+      const isCorrect = selected === q.ans;
+      if (isCorrect) correct++;
+
+      const buttons = document.querySelectorAll("label.answer");
+      const inputs = document.querySelectorAll("#answers input");
+      inputs.forEach(input => input.disabled = true);
+      buttons.forEach((b, idx) => {
+        b.classList.add("disabled");
+        if (idx === q.ans) b.classList.add("correct");
+        if (idx === selected && !isCorrect) b.classList.add("incorrect");
+      });
+
+      history.push({
+        pregunta: q.q,
+        tema: q.tema,
+        dificultad: q.dif,
+        correcta: isCorrect,
+        sinResponder: false,
+        elegida: q.opts[selected],
+        respuestaCorrecta: q.opts[q.ans],
+        explicacion: q.exp
+      });
+
+      if (isCorrect) {
+        showFeedback(true, "Correcto.", q.exp);
+        setTimeout(nextQuestion, 1300);
+      } else {
+        showFeedback(false, `Incorrecto. La respuesta correcta era: <strong>${q.opts[q.ans]}</strong>.`, q.exp);
+        setTimeout(nextQuestion, 3800);
+      }
+    }
+
+    function showFeedback(ok, title, explanation) {
+      const fb = $("feedback");
+      fb.className = `feedback show ${ok ? "good" : "bad"}`;
+      fb.innerHTML = `<strong>${title}</strong><p>${explanation}</p>`;
+    }
+
+    function nextQuestion() {
+      current++;
+      if (current >= questions.length) {
+        finishQuiz();
+      } else {
+        showQuestion();
+      }
+    }
+
+    function finishQuiz() {
+      clearInterval(intervalId);
+      $("quizScreen").classList.add("hidden");
+      $("resultScreen").classList.remove("hidden");
+      $("progress").style.width = "100%";
+
+      const score = correct * POINTS_PER_QUESTION;
+      const wrong = questions.length - correct;
+      const percent = Math.round((correct / questions.length) * 100);
+
+      $("scoreText").textContent = `${score.toFixed(1)}/20`;
+      $("correctText").textContent = correct;
+      $("wrongText").textContent = wrong;
+      $("percentText").textContent = `${percent}%`;
+
+      renderTopicStats();
+      renderRecommendations();
+      renderReview();
+    }
+
+    function groupStats() {
+      const stats = {};
+      questions.forEach(q => {
+        if (!stats[q.tema]) stats[q.tema] = { total: 0, correctas: 0, errores: 0 };
+        stats[q.tema].total++;
+      });
+      history.forEach(h => {
+        if (h.correcta) stats[h.tema].correctas++;
+        else stats[h.tema].errores++;
+      });
+      return stats;
+    }
+
+    function renderTopicStats() {
+      const stats = groupStats();
+      let html = `<table><thead><tr><th>Tema</th><th>Correctas</th><th>Errores</th><th>Dominio</th></tr></thead><tbody>`;
+      Object.entries(stats).forEach(([tema, s]) => {
+        const pct = Math.round((s.correctas / s.total) * 100);
+        html += `<tr>
+          <td>${tema}</td>
+          <td>${s.correctas}/${s.total}</td>
+          <td>${s.errores}</td>
+          <td><div class="bar"><span style="width:${pct}%"></span></div><small>${pct}%</small></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      $("topicStats").innerHTML = html;
+    }
+
+    function renderRecommendations() {
+      const stats = groupStats();
+      const weak = Object.entries(stats)
+        .map(([tema, s]) => ({ tema, ...s, pct: s.correctas / s.total }))
+        .filter(s => s.errores > 0)
+        .sort((a,b) => a.pct - b.pct || b.errores - a.errores)
+        .slice(0, 4);
+
+      if (weak.length === 0) {
+        $("recommendations").innerHTML = `<p><strong>Excelente.</strong> No registraste errores. Repasa con ejercicios numéricos para consolidar rapidez.</p>`;
+        return;
+      }
+
+      const advice = {
+        "Fundamentos de mecánica": "repasa la definición de mecánica, sus ramas y qué tipo de problema pertenece a cada una.",
+        "Estática y dinámica": "distingue reposo/equilibrio de movimiento acelerado y practica ejemplos de clasificación.",
+        "Cuerpos deformables y fluidos": "revisa esfuerzos, deformaciones, ley de Hooke y principio de Arquímedes.",
+        "Antecedentes históricos": "memoriza el aporte asociado a Arquímedes, Copérnico, da Vinci, Stevin y Varignon.",
+        "Momentos y Varignon": "practica brazo perpendicular, línea de acción y suma de momentos de componentes.",
+        "Dimensiones y unidades": "repasa unidades SI, dimensiones dependientes y equivalencias como N = kg·m/s².",
+        "Idealizaciones mecánicas": "diferencia partícula, cuerpo rígido y cuerpo deformable según la geometría relevante.",
+        "Leyes de Newton": "domina las tres leyes y evita confundir pares acción–reacción con fuerzas sobre un mismo cuerpo.",
+        "Equilibrio": "trabaja diagramas de cuerpo libre y ecuaciones ΣFx=0, ΣFy=0, ΣM=0.",
+        "Vectores y componentes": "practica descomposición del peso en planos inclinados: mg senθ y mg cosθ.",
+        "Gravitación y peso": "repasa F = Gm1m2/r², W = mg y la diferencia entre masa y peso.",
+        "Masa y peso": "consolida unidades y significado físico: kg para masa, N para peso.",
+        "Gravitación y movimiento circular": "conecta órbitas con fuerza centrípeta y usa Fc = mv²/r = 4π²mr/T².",
+        "Máquinas simples": "revisa ventaja mecánica en palancas y poleas: menor fuerza implica mayor recorrido.",
+        "Análisis dimensional": "despeja unidades desde fórmulas para verificar consistencia.",
+        "Aplicación y razonamiento": "resuelve cambios proporcionales, especialmente leyes inversas al cuadrado."
+      };
+
+      $("recommendations").innerHTML = weak.map(s => `
+        <div class="mini">
+          <strong>${s.tema}: ${s.correctas}/${s.total}</strong>
+          <p>Prioridad de repaso: ${advice[s.tema] || "vuelve a estudiar la teoría y resuelve ejercicios cortos."}</p>
+        </div>
+      `).join("");
+    }
+
+    function renderReview() {
+      const errors = history.filter(h => !h.correcta);
+      if (errors.length === 0) {
+        $("reviewBox").innerHTML = `<div class="review-item">Sin errores registrados.</div>`;
+        return;
+      }
+      $("reviewBox").innerHTML = errors.map((h, i) => `
+        <div class="review-item">
+          <span class="tag">${h.tema}</span><span class="tag">${h.dificultad}</span>
+          <strong>${i + 1}. ${h.pregunta}</strong>
+          <p><b>Tu respuesta:</b> ${h.elegida}</p>
+          <p><b>Correcta:</b> ${h.respuestaCorrecta}</p>
+          <p><b>Explicación:</b> ${h.explicacion}</p>
+        </div>
+      `).join("");
+    }
+
+    function toggleReview() {
+      $("reviewBox").classList.toggle("hidden");
+    }
+  </script>
+</body>
+</html>
